@@ -1,0 +1,59 @@
+package pl.ick.tournament_app.controller;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import pl.ick.tournament_app.model.answer.CreateAgeGroupAnswer;
+import pl.ick.tournament_app.model.answer.EditAgeGroupAnswer;
+import pl.ick.tournament_app.model.answer.GetAgeGroupAnswer;
+import pl.ick.tournament_app.model.dto.AgeGroupDto;
+import pl.ick.tournament_app.model.request.CreateAgeGroupRequest;
+import pl.ick.tournament_app.model.request.EditAgeGroupRequest;
+import pl.ick.tournament_app.service.AgeGroupService;
+
+import java.util.List;
+@CrossOrigin(origins = "http://localhost:3000")//todo create a configuration for this
+@RestController
+@RequestMapping("/api/age-groups")
+@RequiredArgsConstructor
+public class AgeGroupController {
+
+    private final AgeGroupService ageGroupService;
+
+    @PostMapping
+    public ResponseEntity<CreateAgeGroupAnswer> createAgeGroup(
+            @RequestBody @Valid CreateAgeGroupRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ageGroupService.createAgeGroup(request));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<AgeGroupDto>> getAll() {
+        return ResponseEntity.ok(ageGroupService.getAllAgeGroups());
+    }
+
+    @GetMapping("/tournament/{tournamentId}")
+    public ResponseEntity<List<AgeGroupDto>> getByTournament(@PathVariable Long tournamentId) {
+        return ResponseEntity.ok(ageGroupService.getAgeGroupsByTournament(tournamentId));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<GetAgeGroupAnswer> getOne(@PathVariable Long id) {
+        return ResponseEntity.ok(ageGroupService.getAgeGroupInfo(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EditAgeGroupAnswer> editAgeGroup(
+            @PathVariable Long id,
+            @RequestBody @Valid EditAgeGroupRequest request) {
+        return ResponseEntity.ok(ageGroupService.editAgeGroup(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAgeGroup(@PathVariable Long id) {
+        ageGroupService.deleteAgeGroup(id);
+        return ResponseEntity.noContent().build();
+    }
+}
