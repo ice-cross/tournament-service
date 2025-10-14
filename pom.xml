@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>pl.ick</groupId>
-	<artifactId>tournament-app</artifactId>
+	<artifactId>tournament-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>tournament-app</name>
+	<name>tournament-service</name>
 	<description>ICK tournament application</description>
 	<url/>
 	<licenses>
