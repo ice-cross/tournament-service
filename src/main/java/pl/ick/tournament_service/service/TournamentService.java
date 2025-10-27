@@ -4,8 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.ick.tournament_service.entity.*;
-import pl.ick.tournament_service.exceptions.AgeGroupNotFoundException;
-import pl.ick.tournament_service.exceptions.EventNotFoundException;
 import pl.ick.tournament_service.exceptions.TournamentNotFoundException;
 import pl.ick.tournament_service.model.TournamentStatus;
 import pl.ick.tournament_service.model.TournamentType;
@@ -20,6 +18,7 @@ import pl.ick.tournament_service.repository.*;
 import pl.ick.tournament_service.utils.mappers.RiderMapper;
 import pl.ick.tournament_service.utils.mappers.TournamentMapper;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -32,18 +31,16 @@ public class TournamentService {
 
     private final TournamentRepository tournamentRepository;
     private final RiderRepository riderRepository;
-    private final EventRepository eventRepository;
+    private final EventService eventService;
     private final TournamentMapper tournamentMapper;
     private final HeatRepository heatRepository;
     private final RiderMapper riderMapper;
-    private final AgeGroupRepository ageGroupRepository;
+    private final AgeGroupService ageGroupService;
 
     public CreateTournamentAnswer createTournament(CreateTournamentRequest request) {
         try {
-            Event event = eventRepository.findById(request.eventId())
-                    .orElseThrow(() -> new EventNotFoundException(request.eventId()));
-            AgeGroup ageGroup = ageGroupRepository.findById(request.ageGroupId())
-                    .orElseThrow(() -> new AgeGroupNotFoundException(request.ageGroupId()));
+            Event event = eventService.getEventById(request.eventId());
+            AgeGroup ageGroup = ageGroupService.getAgeGroupById(request.ageGroupId());
 
             Tournament tournament = tournamentMapper.toEntity(request, event, ageGroup);
             Tournament saved = tournamentRepository.save(tournament);
@@ -71,6 +68,14 @@ public class TournamentService {
         }
     }
 
+    @Transactional
+    public List<Tournament> findAllByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return tournamentRepository.findAllById(ids);
+    }
+
     @Transactional(readOnly = true)
     public List<TournamentDto> getTournamentsByEvent(Long eventId) {
         try {
@@ -90,18 +95,30 @@ public class TournamentService {
     @Transactional(readOnly = true)
     public GetTournamentAnswer getTournamentInfo(Long tournamentId) {
         try {
-            Tournament tournament = tournamentRepository.findById(tournamentId)
-                    .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
+            Tournament tournament = getTournamentById(tournamentId);
             return tournamentMapper.toGetAnswer(tournament);
         } catch (Exception e) {
             throw new RuntimeException("Error during getting tournament: {}", e);
         }
     }
 
+    @Transactional
+    public List<Tournament> getTournamentsById(List<Long> tournamentIds) {
+        try {
+            List<Tournament> tournaments = tournamentRepository.findByIdIn(tournamentIds);
+            if(nonNull(tournaments) && !tournaments.isEmpty()) {
+                return tournaments;
+            } else {
+                throw new TournamentNotFoundException("No tournament found.");
+            }
+        }catch (Exception e) {
+            throw new RuntimeException("Error during getting tournament: {}", e);
+        }
+    }
+
     public EditTournamentAnswer editTournament(Long tournamentId, EditTournamentRequest request) {
         try {
-            Tournament tournament = tournamentRepository.findById(tournamentId)
-                    .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
+            Tournament tournament = getTournamentById(tournamentId);
             tournament.setName(request.name());
 
             Tournament updated = tournamentRepository.save(tournament);
@@ -114,8 +131,7 @@ public class TournamentService {
 
     public void deleteTournament(Long tournamentId) {
         try {
-            Tournament tournament = tournamentRepository.findById(tournamentId)
-                    .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
+            Tournament tournament = getTournamentById(tournamentId);
             tournamentRepository.delete(tournament);
         } catch (Exception e) {
             throw new RuntimeException("Error during deleting tournament: {}", e) ;
@@ -123,8 +139,7 @@ public class TournamentService {
     }
 
     public RiderDto getWinner(Long tournamentId) {
-        Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new IllegalArgumentException("Tournament not found"));
+        Tournament tournament = getTournamentById(tournamentId);
 
         if (tournament.getStatus() != TournamentStatus.FINISHED) {
             throw new IllegalStateException("Tournament not finished yet");
@@ -154,8 +169,7 @@ public class TournamentService {
 
     public void recalculateTournamentType(Long tournamentId) {
         try {
-            Tournament tournament = tournamentRepository.findById(tournamentId)
-                    .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
+            Tournament tournament = getTournamentById(tournamentId);
 
             long riderCount = riderRepository.countByAgeGroupTournamentId(tournamentId);
 
@@ -188,4 +202,9 @@ public class TournamentService {
             throw new RuntimeException("Error during updating tournament: {}", e);
         }
     }
+
+    public Tournament saveTournament(Tournament tournament){
+        return tournamentRepository.save(tournament);
+    }
+
 }

@@ -4,15 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.ick.tournament_service.entity.*;
-import pl.ick.tournament_service.exceptions.TournamentNotFoundException;
 import pl.ick.tournament_service.model.TournamentStatus;
 import pl.ick.tournament_service.model.dto.HeatDto;
 import pl.ick.tournament_service.model.dto.HeatSlotDto;
 import pl.ick.tournament_service.model.request.UpdateHeatResultRequest;
 import pl.ick.tournament_service.repository.HeatMapRepository;
 import pl.ick.tournament_service.repository.HeatRepository;
-import pl.ick.tournament_service.repository.QualificationRepository;
-import pl.ick.tournament_service.repository.TournamentRepository;
 import pl.ick.tournament_service.utils.mappers.HeatMapper;
 
 import java.util.*;
@@ -24,13 +21,12 @@ public class HeatService {
 
     private final HeatRepository heatRepository;
     private final HeatMapRepository heatMapRepository;
-    private final QualificationRepository qualificationRepository;
-    private final TournamentRepository  tournamentRepository;
+    private final QualificationService qualificationService;
+    private final TournamentService tournamentService;
     private final HeatMapper heatMapper;
 
     public void generateHeatsForTournament(Long tournamentId) {
-        Qualification qualification = qualificationRepository.findByTournamentId(tournamentId)
-                .orElseThrow(() -> new IllegalStateException("Qualification not found"));
+        Qualification qualification = qualificationService.getQualificationByTournamentId(tournamentId);
 
         List<QualificationEntry> ranked = qualification.getEntries().stream()
                 .sorted(Comparator.comparing(QualificationEntry::getBestTime,
@@ -71,9 +67,9 @@ public class HeatService {
 
                 heat.addSlot(slot);
             }
-            Tournament t = tournamentRepository.findById(tournamentId).orElseThrow(() -> new TournamentNotFoundException(tournamentId));
+            Tournament t = tournamentService.getTournamentById(tournamentId);
             t.setStatus(TournamentStatus.HEATS);
-            tournamentRepository.save(t);
+            tournamentService.saveTournament(t);
             heatRepository.saveAll(heats.values());
         }
     }

@@ -14,7 +14,7 @@ import pl.ick.tournament_service.model.request.EditAgeGroupRequest;
 import pl.ick.tournament_service.service.AgeGroupService;
 
 import java.util.List;
-@CrossOrigin(origins = "http://localhost:3000")//todo create a configuration for this
+
 @RestController
 @RequestMapping("/api/age-groups")
 @RequiredArgsConstructor

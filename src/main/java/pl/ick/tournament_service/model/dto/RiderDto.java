@@ -9,5 +9,6 @@ public record RiderDto(
         String lastName,
         LocalDate birthDate,
         Long ageGroupId,
-        List<Long> tournamentIds
+        List<Long> tournamentIds,
+        List<Long> confirmedTournaments
 ) {}

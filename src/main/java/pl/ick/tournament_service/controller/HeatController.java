@@ -11,7 +11,6 @@ import pl.ick.tournament_service.service.HeatService;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:3000")//todo create a configuration for this
 @RestController
 @RequestMapping("/api/heats")
 @RequiredArgsConstructor

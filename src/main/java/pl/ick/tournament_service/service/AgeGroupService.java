@@ -57,8 +57,7 @@ public class AgeGroupService {
     @Transactional(readOnly = true)
     public GetAgeGroupAnswer getAgeGroupInfo(Long id) {
         try {
-            AgeGroup ag = ageGroupRepository.findById(id)
-                    .orElseThrow(() -> new AgeGroupNotFoundException(id));
+            AgeGroup ag = getAgeGroupById(id);
             return ageGroupMapper.toGetAnswer(ag);
         } catch (Exception e) {
             throw new RuntimeException("Error during getting Age Group: {}", e);
@@ -67,8 +66,7 @@ public class AgeGroupService {
 
     public EditAgeGroupAnswer editAgeGroup(Long id, EditAgeGroupRequest request) {
         try {
-            AgeGroup ag = ageGroupRepository.findById(id)
-                    .orElseThrow(() -> new AgeGroupNotFoundException(id));
+            AgeGroup ag = getAgeGroupById(id);
             ag.setName(request.name());
             ag.setMinAge(request.minAge());
             ag.setMaxAge(request.maxAge());
@@ -83,8 +81,7 @@ public class AgeGroupService {
 
     public void deleteAgeGroup(Long id) {
         try {
-            AgeGroup ageGroup = ageGroupRepository.findById(id)
-                    .orElseThrow(() -> new AgeGroupNotFoundException(id));
+            AgeGroup ageGroup = getAgeGroupById(id);
             ageGroupRepository.delete(ageGroup);
         } catch (Exception e) {
            throw new RuntimeException("Error during deleting Age Group: {}", e) ;
@@ -92,7 +89,11 @@ public class AgeGroupService {
     }
 
     public AgeGroup getAgeGroupById(Long id) {
-        return ageGroupRepository.findById(id)
-                .orElseThrow(() -> new AgeGroupNotFoundException(id));
+        try {
+            return ageGroupRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Age group not found: " + id));
+        } catch (Exception e) {
+            throw new RuntimeException("Error during getting Age Group: {}", e) ;
+        }
     }
 }

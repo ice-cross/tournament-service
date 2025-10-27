@@ -5,13 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.ick.tournament_service.entity.Qualification;
 import pl.ick.tournament_service.entity.QualificationEntry;
-import pl.ick.tournament_service.entity.Rider;
 import pl.ick.tournament_service.entity.Tournament;
 import pl.ick.tournament_service.exceptions.QualificationEntryNotFoundException;
 import pl.ick.tournament_service.exceptions.QualificationNotFoundException;
 import pl.ick.tournament_service.model.TournamentStatus;
 import pl.ick.tournament_service.model.dto.QualificationDto;
 import pl.ick.tournament_service.model.dto.QualificationEntryDto;
+import pl.ick.tournament_service.model.dto.RiderDto;
 import pl.ick.tournament_service.model.request.AddTimeRequest;
 import pl.ick.tournament_service.repository.QualificationEntryRepository;
 import pl.ick.tournament_service.repository.QualificationRepository;
@@ -48,17 +48,17 @@ public class QualificationService {
                 });
 
         // load all riders for the tournament’s age group
-        List<Rider> allRiders = riderService.getRidersByAgeGroup(q.getTournament().getAgeGroup().getId());
+        List<RiderDto> allRiders = riderService.getConfirmedRidersDtoByTournament(tournamentId);
 
         // check which riders already have entries
         Set<Long> existingRiderIds = q.getEntries().stream()
                 .map(entry -> entry.getRider().getId())
                 .collect(Collectors.toSet());
 
-        for (Rider rider : allRiders) {
-            if (!existingRiderIds.contains(rider.getId())) {
+        for (RiderDto rider : allRiders) {
+            if (!existingRiderIds.contains(rider.id())) {
                 QualificationEntry newEntry = new QualificationEntry();
-                newEntry.setRider(rider);
+                newEntry.setRider(riderService.buildRiderFromRiderDto(rider));
                 newEntry.setQualification(q);
                 newEntry.setStartPosition(null);
                 qualificationEntryRepository.save(newEntry); // persist to DB
@@ -120,6 +120,11 @@ public class QualificationService {
                         e.getBestTime()
                 ))
                 .toList();
+    }
+
+    public Qualification getQualificationByTournamentId(Long tournamentId){
+        return qualificationRepository.findByTournamentId(tournamentId)
+                .orElseThrow(() -> new IllegalStateException("Qualification not found"));
     }
 }
 

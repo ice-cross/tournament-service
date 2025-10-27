@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.ick.tournament_service.entity.Event;
 import pl.ick.tournament_service.exceptions.AgeGroupNotFoundException;
-import pl.ick.tournament_service.exceptions.EventNotFoundException;
 import pl.ick.tournament_service.model.answer.CreateEventAnswer;
 import pl.ick.tournament_service.model.answer.EditEventAnswer;
 import pl.ick.tournament_service.model.answer.GetEventAnswer;
@@ -57,8 +56,7 @@ public class EventService {
     @Transactional(readOnly = true)
     public GetEventAnswer getEventInfo(Long eventId) {
         try {
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new EventNotFoundException(eventId));
+            Event event = getEventById(eventId);
             return eventMapper.toGetAnswer(event);
         } catch (Exception e) {
             throw new RuntimeException("Error during getting Event: {}", e);
@@ -67,8 +65,7 @@ public class EventService {
 
     public EditEventAnswer editEvent(Long eventId, EditEventRequest request) {
         try {
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new EventNotFoundException(eventId));
+            Event event = getEventById(eventId);
 
             event.setName(request.name());
             event.setStartDate(request.startDate());
@@ -87,11 +84,19 @@ public class EventService {
 
     public void deleteEvent(Long eventId) {
         try {
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new EventNotFoundException(eventId));
+            Event event = getEventById(eventId);
             eventRepository.delete(event);
         } catch (Exception e) {
             throw new RuntimeException("Error during deleting Event: {}", e) ;
+        }
+    }
+
+    public Event getEventById(Long id) {
+        try {
+            return eventRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Event not found: " + id));
+        } catch (Exception e) {
+            throw new RuntimeException("Error during getting Event: {}", e) ;
         }
     }
 }

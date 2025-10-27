@@ -10,7 +10,7 @@ import pl.ick.tournament_service.model.request.AddTimeRequest;
 import pl.ick.tournament_service.service.QualificationService;
 
 import java.util.List;
-@CrossOrigin(origins = "http://localhost:3000")//todo create a configuration for this
+
 @RestController
 @RequestMapping("/api/qualifications")
 @RequiredArgsConstructor

@@ -33,12 +33,7 @@ public class Rider {
     @JoinColumn(name = "age_group_id", nullable = false)
     private AgeGroup ageGroup;
 
-    @ManyToMany
-    @JoinTable(
-            name = "tournament_rider",
-            joinColumns = @JoinColumn(name = "rider_id"),
-            inverseJoinColumns = @JoinColumn(name = "tournament_id")
-    )
+    @OneToMany(mappedBy = "rider", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<Tournament> tournaments = new HashSet<>();
+    private Set<TournamentRider> tournamentRiders = new HashSet<>();
 }

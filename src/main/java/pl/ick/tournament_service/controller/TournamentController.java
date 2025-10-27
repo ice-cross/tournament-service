@@ -15,7 +15,7 @@ import pl.ick.tournament_service.model.request.EditTournamentRequest;
 import pl.ick.tournament_service.service.TournamentService;
 
 import java.util.List;
-@CrossOrigin(origins = "http://localhost:3000")//todo create a configuration for this
+
 @RestController
 @RequestMapping("/api/tournaments")
 @RequiredArgsConstructor
