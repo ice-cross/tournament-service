@@ -14,6 +14,9 @@ import pl.ick.tournament_service.model.request.EditAgeGroupRequest;
 import pl.ick.tournament_service.repository.AgeGroupRepository;
 import pl.ick.tournament_service.utils.mappers.AgeGroupMapper;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.Comparator;
 import java.util.List;
 
 import static java.util.Objects.nonNull;
@@ -94,6 +97,24 @@ public class AgeGroupService {
                     .orElseThrow(() -> new RuntimeException("Age group not found: " + id));
         } catch (Exception e) {
             throw new RuntimeException("Error during getting Age Group: {}", e) ;
+        }
+    }
+
+    public AgeGroup getCorrespondingAgeGroup(LocalDate birthDate) {
+        if (nonNull(birthDate)) {
+            int age = Period.between(birthDate, LocalDate.now()).getYears();
+
+            List<AgeGroup> allGroups = ageGroupRepository.findAll();
+
+            allGroups.sort(Comparator.comparingInt(AgeGroup::getMinAge));
+
+            return allGroups.stream()
+                    .filter(group -> age >= group.getMinAge() && age <= group.getMaxAge())
+                    .findFirst()
+                    .orElseThrow(() ->
+                            new IllegalStateException("No age group found for age " + age));
+        } else {
+            throw new IllegalArgumentException("Birth date cannot be null");
         }
     }
 }

@@ -1,6 +1,7 @@
 package pl.ick.tournament_service.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.ick.tournament_service.entity.AgeGroup;
@@ -13,9 +14,11 @@ import pl.ick.tournament_service.model.answer.EditRiderAnswer;
 import pl.ick.tournament_service.model.dto.RiderDto;
 import pl.ick.tournament_service.model.request.CreateRiderRequest;
 import pl.ick.tournament_service.model.request.EditRiderRequest;
+import pl.ick.tournament_service.model.request.RiderRegistrationRequest;
 import pl.ick.tournament_service.repository.RiderRepository;
 import pl.ick.tournament_service.utils.mappers.RiderMapper;
 
+import java.util.HashSet;
 import java.util.List;
 
 import static java.util.Objects.nonNull;
@@ -23,6 +26,7 @@ import static java.util.Objects.nonNull;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class RiderService {
 
     private final RiderRepository riderRepository;
@@ -42,6 +46,19 @@ public class RiderService {
             return new CreateRiderAnswer(saved.getId(), "Rider created successfully");
         } catch (Exception e) {
             throw new RuntimeException("Error during creating rider: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public CreateRiderAnswer registerRider(RiderRegistrationRequest request) {
+        try {
+            Rider rider = findOrCreateRider(request);
+            Tournament tournament = findTournamentForRider(request, rider);
+            registerRiderToTournament(rider, tournament);
+            tournamentService.recalculateTournamentType(tournament.getId());
+            return new CreateRiderAnswer(rider.getId(), "Rider registered successfully");
+        } catch (Exception e) {
+            throw new RuntimeException("Error during rider registration: " + e.getMessage());
         }
     }
 
@@ -174,6 +191,44 @@ public class RiderService {
 
     public Rider buildRiderFromRiderDto(RiderDto riderDto) {
         return riderMapper.fromDtoToEntity(riderDto);
+    }
+
+    private Rider findOrCreateRider(RiderRegistrationRequest request) {
+        return riderRepository.findByLastNameAndBirthDate(
+                request.getLastName(), request.getBirthDate()
+        ).orElseGet(() -> {
+            AgeGroup ageGroup = ageGroupService.getCorrespondingAgeGroup(request.getBirthDate());
+
+            Rider rider = riderMapper.toEntity(new CreateRiderRequest(request.getFirstName(), request.getLastName(), request.getBirthDate(), ageGroup.getId(), null), ageGroup, null);
+            return riderRepository.save(rider);
+        });
+    }
+
+    private Tournament findTournamentForRider(RiderRegistrationRequest request, Rider rider) {
+        AgeGroup ageGroup = rider.getAgeGroup();
+        return tournamentService.findTournamentByEventAndGroup(request.getEventName(), ageGroup);
+    }
+
+    private void registerRiderToTournament(Rider rider, Tournament tournament) {
+        boolean alreadyRegistered = rider.getTournamentRiders() != null &&
+                rider.getTournamentRiders().stream()
+                        .anyMatch(tr -> tr.getTournament().equals(tournament));
+
+        if (alreadyRegistered) {
+            return;
+        }
+
+        TournamentRider tr = new TournamentRider();
+        tr.setRider(rider);
+        tr.setTournament(tournament);
+        tr.setConfirmed(false);
+
+        if (rider.getTournamentRiders() == null) {
+            rider.setTournamentRiders(new HashSet<>());
+        }
+        rider.getTournamentRiders().add(tr);
+
+        riderRepository.save(rider);
     }
 }
 

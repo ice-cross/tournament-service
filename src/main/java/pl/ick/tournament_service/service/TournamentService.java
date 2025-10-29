@@ -207,4 +207,11 @@ public class TournamentService {
         return tournamentRepository.save(tournament);
     }
 
+    public Tournament findTournamentByEventAndGroup(String eventName, AgeGroup ageGroup) {
+        return tournamentRepository.findByEventNameAndAgeGroup(eventName, ageGroup)
+                .orElseThrow(() -> new IllegalStateException(
+                        "No tournament found for event '" + eventName +
+                                "' and age group '" + ageGroup.getName() + "'"
+                ));
+    }
 }
