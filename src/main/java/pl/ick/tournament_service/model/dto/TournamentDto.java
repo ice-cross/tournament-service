@@ -6,5 +6,6 @@ public record TournamentDto(
         Long id,
         String name,
         Long eventId,
+        Long ageGroupId,
         TournamentType type
 ) {}

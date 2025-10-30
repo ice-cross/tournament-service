@@ -24,6 +24,7 @@ public class TournamentMapper {
                 t.getId(),
                 t.getName(),
                 t.getEvent().getId(),
+                t.getAgeGroup().getId(),
                 t.getType()
         );
     }

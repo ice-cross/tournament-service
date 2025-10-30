@@ -181,6 +181,7 @@ public class RiderService {
                     .orElseThrow(() -> new RiderNotFoundException(id));
 
             Long tournamentId = rider.getAgeGroup().getTournament().getId();
+            
             riderRepository.delete(rider);
 
             tournamentService.recalculateTournamentType(tournamentId);
